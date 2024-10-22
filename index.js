@@ -37,7 +37,7 @@ server.listen(port, () => {
 
 const io = socketio(server, {
   cors: {
-    origin: 'http://localhost:8100',
+    origin: '*',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Content-Type'],
     credentials: true,
