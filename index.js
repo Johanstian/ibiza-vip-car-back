@@ -1,9 +1,9 @@
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
 require('dotenv').config();
 const connection = require('./database/connection');
 const cors = require('cors');
+const socketio = require('socket.io');
 
 
 //DATABASE
@@ -12,10 +12,10 @@ const app = express();
 const port = process.env.PORT || 3001;
 const server = http.createServer(app);
 app.use(cors({
-    origin: '*',
-    methods: 'POST, GET, PATCH, PUT, DELETE, HEAD',
-    preflightContinue: false,
-    optionsSuccessStatus: 200
+  origin: '*',
+  methods: 'POST, GET, PATCH, PUT, DELETE, HEAD',
+  preflightContinue: false,
+  optionsSuccessStatus: 200.
 }));
 
 //JSON
@@ -26,43 +26,38 @@ app.use(express.urlencoded({ extended: true }));
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/user', userRoutes);
 
-//WS
-const wss = new WebSocket.Server({ server });
-// let drivers = {};
-wss.on('connection', (ws) => {
-    console.log('Nuevo cliente conectado');
-  
-    ws.on('message', (message) => {
-      const data = JSON.parse(message);
-      
-      if (data.type === 'updateLocation') {
-        // Envía la ubicación a todos los clientes conectados (administradores)
-        wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({
-              type: 'locationUpdate',
-              driverId: data.driverId,
-              lat: data.lat,
-              lng: data.lng,
-            }));
-          }
-        });
-      }
-    });
-  
-    ws.on('close', () => {
-      console.log('Cliente desconectado');
-    });
-  });
-
-// Configurar ruta básica para el servidor Express
 app.get('/', (req, res) => {
-    res.send('Servidor WebSocket con Node.js y Express está funcionando');
+  res.send('Servidor WebSocket con Node.js y Express está funcionando');
 });
 
 //LISTEN PORT
 server.listen(port, () => {
-    console.log('Server listen with WS Connected to port:' + port)
+  console.log('Server listen with WS Connected to port:' + port)
+});
+
+const io = socketio(server, {
+  cors: {
+    origin: 'http://localhost:8100',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type'],
+    credentials: true,
+  },
+  transports: ['websocket', 'polling']
+});
+
+
+io.on('connection', (socket) => {
+  console.log('New client connected');
+
+  socket.on('updateLocation', (data) => {
+    console.log('Location update received:', data);
+
+    io.emit('locationUpdate', data)
+  });
+  socket.on('disconnect', () => {
+    console.log('Client disconnected');
+  });
+
 });
 
 module.exports = app;
