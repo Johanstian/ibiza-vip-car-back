@@ -35,25 +35,24 @@ server.listen(port, () => {
   console.log('Server listen with WS Connected to port:' + port)
 });
 
-const io = socketio(server, {
+const io = require('socket.io')(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST'],
-    allowedHeaders: ['Content-Type'],
-    credentials: true,
-  },
-  transports: ['websocket', 'polling']
+    origin: "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 
 
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  console.log('New client connected', socket.id);
 
   socket.on('updateLocation', (data) => {
     console.log('Location update received:', data);
 
     io.emit('locationUpdate', data)
   });
+  
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });
